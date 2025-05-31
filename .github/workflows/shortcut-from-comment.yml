@@ -32,7 +32,19 @@ jobs:
 
       - name: Sign the shortcut file
         run: |
-          /usr/bin/shortcuts sign "Shortcuts/${APP_ID}.shortcut" -o "Shortcuts/${APP_ID}.shortcut"
+          echo "Memory usage before signing:"
+          vm_stat
+          top -l 1 -stats mem,cpu
+#          /usr/bin/shortcuts sign "Shortcuts/${APP_ID}.shortcut" -o "Shortcuts/${APP_ID}.shortcut"
+          for i in {1..3}; do
+            echo "Attempt $i to sign shortcut"
+            /usr/bin/shortcuts sign "Shortcuts/${APP_ID}.shortcut" -o "Shortcuts/${APP_ID}.shortcut" && break
+            echo "Failed attempt $i, retrying..."
+            sleep 5
+          done
+          echo "Memory usage after signing:"
+          vm_stat   
+          top -l 1 -stats mem,cpu
 
       - name: Commit changes
         run: |
