@@ -1,0 +1,41 @@
+name: Create Shortcut on Issue Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  create_shortcut:
+    if: github.event.issue.number == 1
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Validate comment content
+        id: validate
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          if [[ ! "$COMMENT" =~ ^[A-Za-z0-9.-]+$ ]]; then
+            echo "Invalid app identifier."
+            exit 1
+          fi
+          echo "APP_ID=$COMMENT" >> $GITHUB_ENV
+
+      - name: Prepare shortcut file from template
+        run: |
+          mkdir -p Shortcuts
+          cp shortcut-template.plist Shortcuts/${APP_ID}.shortcut
+          sed -i '' "s/\\$APP_ID/${APP_ID}/g" Shortcuts/${APP_ID}.shortcut
+
+      - name: Sign the shortcut file
+        run: |
+          /usr/bin/shortcuts sign "Shortcuts/${APP_ID}.shortcut" -o "Shortcuts/${APP_ID}.shortcut"
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Shortcuts/${APP_ID}.shortcut
+          git commit -m "Add signed shortcut for ${APP_ID}"
+          git push
