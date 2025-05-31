@@ -17,6 +17,7 @@ jobs:
         id: validate
         run: |
           COMMENT="${{ github.event.comment.body }}"
+          COMMENT="${COMMENT//[$'\t\r\n ']/}"
           if [[ ! "$COMMENT" =~ ^[A-Za-z0-9.-]+$ ]]; then
             echo "Invalid app identifier."
             exit 1
